@@ -1,0 +1,28 @@
+# Postgres for the second execution adapter.
+#   docker compose up -d
+#   pip install -e ".[postgres]"
+#   python scripts/seed_postgres.py
+#   CAE_DB_DIALECT=postgres \
+#   CAE_POSTGRES_DSN=postgresql://cae:cae@localhost:5433/cae \
+#   cae ask "revenue by region this year"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cae-postgres
+    environment:
+      POSTGRES_USER: cae
+      POSTGRES_PASSWORD: cae
+      POSTGRES_DB: cae
+    ports:
+      - "5433:5432"
+    volumes:
+      - cae_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cae"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  cae_pgdata:

@@ -1,0 +1,42 @@
+{%- if plan.comparison -%}
+WITH base AS (
+{% endif -%}
+SELECT
+{%- for item in plan.select %}
+    {{ item.expr }} AS {{ item.alias }}{{ "," if not loop.last }}
+{%- endfor %}
+FROM {{ plan.from_physical }} AS {{ plan.from_table }}
+{%- for join in plan.joins %}
+JOIN {{ join.physical }} AS {{ join.table }} ON {{ join.on }}
+{%- endfor %}
+{%- if plan.where %}
+WHERE {{ plan.where | map(attribute="expr") | join("\n  AND ") }}
+{%- endif %}
+{%- if plan.group_by %}
+GROUP BY {{ plan.group_by | join(", ") }}
+{%- endif %}
+{%- if not plan.comparison %}
+{%- if order_sql %}
+ORDER BY {{ order_sql }}
+{%- endif %}
+{%- if plan.limit %}
+LIMIT {{ plan.limit }}
+{%- endif %}
+{%- else %}
+)
+SELECT
+    base.*,
+{%- for alias in plan.comparison.value_aliases %}
+    LAG({{ alias }}) OVER w AS {{ alias }}_prev,
+    {{ alias }} - LAG({{ alias }}) OVER w AS {{ alias }}_delta,
+    ({{ alias }} - LAG({{ alias }}) OVER w) / NULLIF(LAG({{ alias }}) OVER w, 0) AS {{ alias }}_pct_change{{ "," if not loop.last }}
+{%- endfor %}
+FROM base
+WINDOW w AS ({% if plan.comparison.partition_by %}PARTITION BY {{ plan.comparison.partition_by | join(", ") }} {% endif %}ORDER BY {{ plan.comparison.order_alias }})
+{%- if order_sql %}
+ORDER BY {{ order_sql }}
+{%- endif %}
+{%- if plan.limit %}
+LIMIT {{ plan.limit }}
+{%- endif %}
+{%- endif %}

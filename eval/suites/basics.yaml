@@ -1,0 +1,159 @@
+# Basic single-turn questions. `today` is frozen so relative ranges and the
+# seeded dataset are fully reproducible. check_sql is independent hand-written
+# ground truth executed directly against the same database.
+today: 2026-06-04
+
+items:
+  - id: revenue_last_month
+    question: total revenue last month
+    gold_intent:
+      metrics: [revenue]
+      time_range: { relative: last_month }
+    expect:
+      min_rows: 1
+      max_rows: 1
+      check_sql: >
+        SELECT SUM(oi.quantity * oi.unit_price * (1 - oi.discount))
+        FROM orders o JOIN order_items oi ON o.order_id = oi.order_id
+        WHERE o.order_date >= DATE '2026-05-01' AND o.order_date <= DATE '2026-05-31'
+      check_column: revenue
+      tolerance: 0.0001
+
+  - id: revenue_by_region_ytd
+    question: revenue by region year to date
+    gold_intent:
+      metrics: [revenue]
+      dimensions: [region]
+      time_range: { relative: ytd }
+    expect:
+      min_rows: 4
+      max_rows: 4
+      check_sql: >
+        SELECT SUM(oi.quantity * oi.unit_price * (1 - oi.discount)) AS rev
+        FROM orders o
+        JOIN customers c ON o.customer_id = c.customer_id
+        JOIN order_items oi ON o.order_id = oi.order_id
+        WHERE o.order_date >= DATE '2026-01-01' AND o.order_date <= DATE '2026-06-04'
+        GROUP BY c.region ORDER BY rev DESC LIMIT 1
+      check_column: revenue
+      tolerance: 0.0001
+
+  - id: orders_by_channel_2025
+    question: number of orders by channel in 2025
+    gold_intent:
+      metrics: [orders_count]
+      dimensions: [channel]
+      time_range: { relative: "2025" }
+    expect:
+      min_rows: 3
+      max_rows: 3
+
+  - id: weekly_revenue_trend_ytd
+    question: weekly revenue trend this year
+    gold_intent:
+      metrics: [revenue]
+      time_range: { grain: week, relative: ytd }
+    expect:
+      min_rows: 15
+
+  - id: top5_categories_units
+    question: top 5 categories by units sold last quarter
+    gold_intent:
+      metrics: [units_sold]
+      dimensions: [category]
+      time_range: { relative: last_quarter }
+      sort: [{ field: units_sold, direction: desc }]
+      limit: 5
+    expect:
+      min_rows: 5
+      max_rows: 5
+      check_sql: >
+        SELECT SUM(oi.quantity) AS units
+        FROM orders o
+        JOIN order_items oi ON o.order_id = oi.order_id
+        JOIN products p ON oi.product_id = p.product_id
+        JOIN categories cat ON p.category_id = cat.category_id
+        WHERE o.order_date >= DATE '2026-01-01' AND o.order_date <= DATE '2026-03-31'
+        GROUP BY cat.name ORDER BY units DESC LIMIT 1
+      check_column: units_sold
+      tolerance: 0.0001
+
+  - id: aov_by_segment
+    question: average order value by segment over the last 6 months
+    gold_intent:
+      metrics: [average_order_value]
+      dimensions: [segment]
+      time_range: { relative: last_6_months }
+    expect:
+      min_rows: 3
+      max_rows: 3
+
+  - id: units_by_product_line_q3_2024
+    question: units sold by product line in Q3 2024
+    gold_intent:
+      metrics: [units_sold]
+      dimensions: [product_line]
+      time_range: { relative: q3_2024 }
+    expect:
+      min_rows: 5
+      max_rows: 5
+
+  - id: shipping_cost_by_carrier
+    question: shipping cost by carrier year to date
+    gold_intent:
+      metrics: [shipping_cost]
+      dimensions: [carrier]
+      time_range: { relative: ytd }
+    expect:
+      min_rows: 4
+      max_rows: 4
+
+  - id: revenue_enterprise_last_month
+    question: revenue from enterprise customers last month
+    gold_intent:
+      metrics: [revenue]
+      filters:
+        - { dimension: segment, op: "=", values: [Enterprise] }
+      time_range: { relative: last_month }
+    expect:
+      min_rows: 1
+      max_rows: 1
+      check_sql: >
+        SELECT SUM(oi.quantity * oi.unit_price * (1 - oi.discount))
+        FROM orders o
+        JOIN customers c ON o.customer_id = c.customer_id
+        JOIN order_items oi ON o.order_id = oi.order_id
+        WHERE o.order_date >= DATE '2026-05-01' AND o.order_date <= DATE '2026-05-31'
+          AND c.segment = 'Enterprise'
+      check_column: revenue
+      tolerance: 0.0001
+
+  - id: customers_by_region_ytd
+    question: unique customers by region this year
+    gold_intent:
+      metrics: [customers_count]
+      dimensions: [region]
+      time_range: { relative: ytd }
+    expect:
+      min_rows: 4
+      max_rows: 4
+
+  - id: revenue_and_units_by_channel
+    question: revenue and units sold by channel last month
+    gold_intent:
+      metrics: [revenue, units_sold]
+      dimensions: [channel]
+      time_range: { relative: last_month }
+    expect:
+      min_rows: 3
+      max_rows: 3
+
+  - id: discount_by_line_2025
+    question: discount amount by product line in 2025
+    gold_intent:
+      metrics: [discount_amount]
+      dimensions: [product_line]
+      time_range: { relative: "2025" }
+    expect:
+      min_rows: 5
+      max_rows: 5

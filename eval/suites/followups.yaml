@@ -1,0 +1,74 @@
+# Conversational follow-up chains. Items with follow_up: true run in the same
+# session as the previous item, so the parser receives the active intent as
+# context. Gold intents are the FULL post-edit intent (not a patch).
+today: 2026-06-04
+
+items:
+  - id: base_revenue_by_region
+    question: revenue by region this year
+    gold_intent:
+      metrics: [revenue]
+      dimensions: [region]
+      time_range: { relative: ytd }
+    expect:
+      min_rows: 4
+      max_rows: 4
+
+  - id: fu_filter_enterprise
+    question: now filter that to just enterprise customers
+    follow_up: true
+    gold_intent:
+      metrics: [revenue]
+      dimensions: [region]
+      filters:
+        - { dimension: segment, op: "=", values: [Enterprise] }
+      time_range: { relative: ytd }
+    expect:
+      min_rows: 4
+      max_rows: 4
+
+  - id: fu_swap_dimension
+    question: break that down by product line instead
+    follow_up: true
+    gold_intent:
+      metrics: [revenue]
+      dimensions: [product_line]
+      filters:
+        - { dimension: segment, op: "=", values: [Enterprise] }
+      time_range: { relative: ytd }
+    expect:
+      min_rows: 5
+      max_rows: 5
+
+  - id: base_monthly_trend
+    question: monthly revenue trend this year
+    gold_intent:
+      metrics: [revenue]
+      time_range: { grain: month, relative: ytd }
+    expect:
+      min_rows: 6
+      max_rows: 6
+
+  - id: fu_add_comparison
+    question: compare that month over month
+    follow_up: true
+    gold_intent:
+      metrics: [revenue]
+      comparison: mom
+      time_range: { grain: month, relative: ytd }
+    expect:
+      min_rows: 6
+      max_rows: 6
+
+  - id: fu_filter_west
+    question: just the west region please
+    follow_up: true
+    gold_intent:
+      metrics: [revenue]
+      comparison: mom
+      filters:
+        - { dimension: region, op: "=", values: [West] }
+      time_range: { grain: month, relative: ytd }
+    expect:
+      min_rows: 6
+      max_rows: 6

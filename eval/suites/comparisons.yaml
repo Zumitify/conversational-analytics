@@ -1,0 +1,55 @@
+# WoW / MoM / YoY comparison questions. Gold intents include the grain the
+# validator pins for each comparison kind (wow->week, mom->month, yoy->year).
+today: 2026-06-04
+
+items:
+  - id: wow_revenue_12w
+    question: week over week revenue growth over the last 12 weeks
+    gold_intent:
+      metrics: [revenue]
+      comparison: wow
+      time_range: { grain: week, relative: last_12_weeks }
+    expect:
+      min_rows: 11
+      max_rows: 14
+
+  - id: mom_revenue_by_region
+    question: month over month revenue by region this year
+    gold_intent:
+      metrics: [revenue]
+      dimensions: [region]
+      comparison: mom
+      time_range: { grain: month, relative: ytd }
+    expect:
+      min_rows: 20
+      max_rows: 24
+
+  - id: yoy_revenue
+    question: year over year revenue growth
+    gold_intent:
+      metrics: [revenue]
+      comparison: yoy
+      time_range: { grain: year }
+    expect:
+      min_rows: 2
+      max_rows: 3
+
+  - id: wow_units_q1_2026
+    question: week over week units sold in Q1 2026
+    gold_intent:
+      metrics: [units_sold]
+      comparison: wow
+      time_range: { grain: week, relative: q1_2026 }
+    expect:
+      min_rows: 12
+      max_rows: 15
+
+  - id: mom_orders_6m
+    question: month over month order count over the last 6 months
+    gold_intent:
+      metrics: [orders_count]
+      comparison: mom
+      time_range: { grain: month, relative: last_6_months }
+    expect:
+      min_rows: 5
+      max_rows: 7

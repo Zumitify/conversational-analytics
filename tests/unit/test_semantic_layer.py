@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from cae.exceptions import UnreachableJoinError
 from cae.semantic_layer import SemanticLayer
+
+SEMANTIC_LAYER_PATH = (
+    Path(__file__).resolve().parents[2] / "config" / "semantic_layer.yaml"
+)
+# Loaded once at module level: hypothesis runs the property many times and
+# can't take pytest fixtures as @given inputs.
+PROPERTY_LAYER = SemanticLayer.from_yaml(SEMANTIC_LAYER_PATH)
 
 
 class TestResolution:
@@ -101,9 +110,7 @@ class TestJoinGraphProperty:
     def test_any_subset_connects_or_raises(self, data):
         """Property: any subset of metrics+dimensions yields a join list whose
         edges are parent-first connected, or a clear UnreachableJoinError."""
-        layer = SemanticLayer.from_yaml(
-            __import__("tests.conftest", fromlist=["SEMANTIC_LAYER_PATH"]).SEMANTIC_LAYER_PATH
-        )
+        layer = PROPERTY_LAYER
         metric_names = [m.name for m in layer.list_metrics()]
         dim_names = [d.name for d in layer.list_dimensions()]
         metrics = data.draw(st.lists(st.sampled_from(metric_names), max_size=4))

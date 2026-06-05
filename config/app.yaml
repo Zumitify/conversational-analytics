@@ -1,0 +1,28 @@
+# Conversational Analytics Engine — application config.
+# Every value here can be overridden with a CAE_* environment variable
+# (see src/cae/config.py).
+
+semantic_layer_path: config/semantic_layer.yaml
+sessions_db_path: sessions.db
+
+database:
+  dialect: duckdb          # duckdb | postgres
+  path: cae.duckdb
+  postgres_dsn: null       # e.g. postgresql://cae:cae@localhost:5433/cae
+
+llm:
+  provider: anthropic      # anthropic | mock
+  model: claude-opus-4-8
+  max_tokens: 2048
+  summary_max_tokens: 512
+
+limits:
+  default_limit: 1000      # injected when the user didn't ask for a limit
+  max_rows: 10000          # hard cap enforced by the SQL validator
+  lookback_years: 5        # mandatory time bound when the question has none
+  query_timeout_s: 30
+  max_llm_retries: 2
+
+api:
+  host: 127.0.0.1
+  port: 8000

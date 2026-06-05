@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.python-version
+
+# Project artifacts
+*.duckdb
+*.duckdb.wal
+sessions.db
+eval/reports/
+.coverage
+htmlcov/
+.pytest_cache/
+.hypothesis/
+
+# Secrets / env
+.env
+*.local.yaml
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

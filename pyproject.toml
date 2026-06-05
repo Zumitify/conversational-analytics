@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "conversational-analytics"
+version = "0.1.0"
+description = "A natural-language interface to analytical databases with a real semantic layer, validated SQL generation, and conversational follow-ups."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Sumit Pagar" }]
+keywords = ["nl2sql", "semantic-layer", "analytics", "llm", "duckdb"]
+dependencies = [
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    "sqlglot>=25.0",
+    "jinja2>=3.1",
+    "duckdb>=1.0",
+    "fastapi>=0.111",
+    "uvicorn>=0.30",
+]
+
+[project.optional-dependencies]
+anthropic = ["anthropic>=0.40"]
+postgres = ["psycopg[binary]>=3.1"]
+ui = ["streamlit>=1.36", "altair>=5.3", "pandas>=2.0", "requests>=2.31"]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "httpx>=0.27",
+    "hypothesis>=6.100",
+]
+all = ["conversational-analytics[anthropic,postgres,ui,dev]"]
+
+[project.scripts]
+cae = "cae.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cae"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["src/cae"]

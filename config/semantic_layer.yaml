@@ -1,0 +1,165 @@
+# Semantic layer for the bundled synthetic e-commerce dataset.
+# This file is the single source of truth about the data: the LLM never sees
+# raw CREATE TABLE statements — only the compact view derived from this file.
+
+fact_table: orders
+
+tables:
+  orders:
+    physical: orders
+    primary_key: order_id
+    time_column: order_date
+    joins:
+      - to: customers
+        "on": orders.customer_id = customers.customer_id
+      - to: order_items
+        "on": orders.order_id = order_items.order_id
+      - to: payments
+        "on": orders.order_id = payments.order_id
+      - to: shipments
+        "on": orders.order_id = shipments.order_id
+
+  customers:
+    physical: customers
+    primary_key: customer_id
+
+  order_items:
+    physical: order_items
+    primary_key: order_item_id
+    joins:
+      - to: products
+        "on": order_items.product_id = products.product_id
+
+  products:
+    physical: products
+    primary_key: product_id
+    joins:
+      - to: categories
+        "on": products.category_id = categories.category_id
+      - to: suppliers
+        "on": products.supplier_id = suppliers.supplier_id
+
+  categories:
+    physical: categories
+    primary_key: category_id
+
+  suppliers:
+    physical: suppliers
+    primary_key: supplier_id
+
+  payments:
+    physical: payments
+    primary_key: payment_id
+
+  shipments:
+    physical: shipments
+    primary_key: shipment_id
+
+metrics:
+  revenue:
+    expr: "SUM(order_items.quantity * order_items.unit_price * (1 - order_items.discount))"
+    requires: [order_items]
+    synonyms: [sales, gross revenue, total sales, total revenue, turnover]
+    format: currency_usd
+    description: Net revenue after line-item discounts.
+
+  orders_count:
+    expr: "COUNT(DISTINCT orders.order_id)"
+    requires: []
+    synonyms: [number of orders, order count, total orders, orders]
+    format: integer
+    description: Distinct count of orders.
+
+  units_sold:
+    expr: "SUM(order_items.quantity)"
+    requires: [order_items]
+    synonyms: [quantity sold, units, items sold, volume]
+    format: integer
+    description: Total units across order lines.
+
+  average_order_value:
+    expr: "SUM(order_items.quantity * order_items.unit_price * (1 - order_items.discount)) / NULLIF(COUNT(DISTINCT orders.order_id), 0)"
+    requires: [order_items]
+    synonyms: [aov, avg order value, average basket]
+    format: currency_usd
+    description: Revenue divided by distinct orders.
+
+  customers_count:
+    expr: "COUNT(DISTINCT customers.customer_id)"
+    requires: [customers]
+    synonyms: [number of customers, unique customers, buyers]
+    format: integer
+    description: Distinct customers with at least one order in scope.
+
+  shipping_cost:
+    expr: "SUM(shipments.shipping_cost)"
+    requires: [shipments]
+    synonyms: [freight cost, shipping spend, delivery cost]
+    format: currency_usd
+    description: Total carrier shipping cost.
+
+  discount_amount:
+    expr: "SUM(order_items.quantity * order_items.unit_price * order_items.discount)"
+    requires: [order_items]
+    synonyms: [discounts given, total discount, markdown]
+    format: currency_usd
+    description: Revenue given away as line-item discounts.
+
+dimensions:
+  region:
+    expr: "customers.region"
+    requires: [customers]
+    values: [Northeast, Southeast, Midwest, West]
+    synonyms: [area, territory]
+
+  segment:
+    expr: "customers.segment"
+    requires: [customers]
+    values: [Consumer, Corporate, Enterprise]
+    synonyms: [customer segment, customer type]
+
+  product_line:
+    expr: "products.line"
+    requires: [order_items, products]
+    values: [Electronics, Home, Outdoors, Apparel, Beauty]
+    synonyms: [line, product family]
+
+  category:
+    expr: "categories.name"
+    requires: [order_items, products, categories]
+    synonyms: [product category]
+
+  supplier:
+    expr: "suppliers.name"
+    requires: [order_items, products, suppliers]
+    synonyms: [vendor, manufacturer]
+
+  channel:
+    expr: "orders.channel"
+    requires: []
+    values: [web, mobile, store]
+    synonyms: [sales channel, platform]
+
+  order_status:
+    expr: "orders.status"
+    requires: []
+    values: [completed, shipped, processing, cancelled, returned]
+    synonyms: [status]
+
+  payment_method:
+    expr: "payments.method"
+    requires: [payments]
+    values: [credit_card, debit_card, paypal, gift_card]
+    synonyms: [payment type]
+
+  carrier:
+    expr: "shipments.carrier"
+    requires: [shipments]
+    values: [UPS, FedEx, USPS, DHL]
+    synonyms: [shipping carrier, courier]
+
+  customer_email:
+    expr: "customers.email"
+    requires: [customers]
+    pii: true
+    synonyms: [email]
